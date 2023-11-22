@@ -8,10 +8,15 @@ import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class Server {
+    private String path;
+    private ExecutorService executor;
+    private HashMap<String, Map<String, Handler>> handlers;
     public void connection(int port, List validPaths) {
 
         try (final var serverSocket = new ServerSocket(port)) {
@@ -101,6 +106,23 @@ public class Server {
         Files.copy(filePath, out);
         out.flush();
     }
+    public void addHandler(String method, String path, Handler handler) {
+        if (!handlers.containsKey(method)) {
+            handlers.put(method, new HashMap<>());
+        }
+        handlers.get(method).put(path, handler);
+    }
+
+    protected void responseWithoutContent(BufferedOutputStream out, String responseCode, String responseStatus) throws IOException {
+        out.write((
+                "HTTP/1.1 " + responseCode + " " + responseStatus + "\r\n" +
+                        "Content-Length: 0\r\n" +
+                        "Connection: close\r\n" +
+                        "\r\n"
+        ).getBytes());
+        out.flush();
+    }
+
 
 
 }
