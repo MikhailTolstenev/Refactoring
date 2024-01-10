@@ -69,4 +69,10 @@ public class Server {
         handlers.put(method + path, handler);
 
     }
+    public void getQueryParam(String name){
+
+    }
+    public void getQueryParams(){
+
+    }
 }

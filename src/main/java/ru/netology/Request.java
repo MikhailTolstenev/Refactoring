@@ -1,10 +1,13 @@
 package ru.netology;
+import org.apache.http.NameValuePair;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Request {
@@ -16,6 +19,11 @@ public class Request {
     private final long lenght;
     private final Map<String, String> headers;
     private final String body;
+//    private final String queryParam;
+    private final List<NameValuePair> queryParams = new ArrayList<>();
+
+
+
 
     public Request(BufferedReader in) throws IOException {
         var requestLine = in.readLine();
@@ -75,4 +83,17 @@ public class Request {
     public String getBody() {
         return body;
     }
+    public List<NameValuePair> getQueryParam(String name) {
+        var params = new ArrayList<NameValuePair>();
+        for (NameValuePair param : queryParams) {
+            if (param.getName().equals(name)) {
+                params.add(param);
+            }
+        }
+        return params;
+    }
+    public List<NameValuePair> getQueryParams() {
+        return queryParams;
+    }
+
 }
