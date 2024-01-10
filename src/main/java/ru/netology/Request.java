@@ -1,121 +1,78 @@
 package ru.netology;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
-public class  Request {
-    public static final String GET = "GET";
-    public static final String POST = "POST";
-    public static String path;
-    public static String method;
+public class Request {
+    private final String method;
+    private final String path;
+    private final String version;
+    private final Path filePath;
+    private final String mimeType;
+    private final long lenght;
+    private final Map<String, String> headers;
+    private final String body;
 
-    public Request(String path, String method) {
-        this.path = path;
-        this.method = method;
+    public Request(BufferedReader in) throws IOException {
+        var requestLine = in.readLine();
+        final var parts = requestLine.split(" ");
+        this.method = parts[0];
+        this.path = parts[1];
+        this.version = parts[2];
+        this.filePath = Path.of(".", "public", path);
+        this.mimeType = Files.probeContentType(filePath);
+        this.lenght = Files.size(filePath);
+
+        this.headers = new HashMap<>();
+        String line;
+        while (!(line = in.readLine()).isEmpty()) {
+            final var headerParts = line.split(": ");
+            headers.put(headerParts[0], headerParts[1]);
+        }
+
+        final var contentLength = Integer.parseInt(headers.getOrDefault("Content-Length", "0"));
+        if (contentLength > 0) {
+            final var bodyChars = new char[contentLength];
+            in.read(bodyChars);
+            this.body = new String(bodyChars);
+        } else {
+            this.body = null;
+        }
     }
 
-    public static Request creatRequest(BufferedInputStream in) throws IOException {
-        final var allowedMethods = List.of(GET, POST);
-        String body = null;
-        // лимит на request line + заголовки
-        final var limit = 4096;
-
-        in.mark(limit);
-        final var buffer = new byte[limit];
-        final var read = in.read(buffer);
-
-        // ищем request line
-        final var requestLineDelimiter = new byte[]{'\r', '\n'};
-        final var requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
-        if (requestLineEnd == -1) {
-            return null;
-        }
-
-        // читаем request line
-        final var requestLine = new String(Arrays.copyOf(buffer, requestLineEnd)).split(" ");
-        if (requestLine.length != 3) {
-            return null;
-        }
-
-        method = requestLine[0];
-        if (!allowedMethods.contains(method)) {
-            return null;
-        }
-
-
-        path = requestLine[1];
-        if (!path.startsWith("/")) {
-            return null;
-        }
-
-
-        // ищем заголовки
-        final var headersDelimiter = new byte[]{'\r', '\n', '\r', '\n'};
-        final var headersStart = requestLineEnd + requestLineDelimiter.length;
-        final var headersEnd = indexOf(buffer, headersDelimiter, headersStart, read);
-        if (headersEnd == -1) {
-            return null;
-        }
-
-        // отматываем на начало буфера
-        in.reset();
-        // пропускаем requestLine
-        in.skip(headersStart);
-
-        final var headersBytes = in.readNBytes(headersEnd - headersStart);
-        final var headers = Arrays.asList(new String(headersBytes).split("\r\n"));
-        System.out.println(headers);
-
-        // для GET тела нет
-        if (!method.equals(GET)) {
-            in.skip(headersDelimiter.length);
-            // вычитываем Content-Length, чтобы прочитать body
-            final var contentLength = extractHeader(headers, "Content-Length");
-            if (contentLength.isPresent()) {
-                final var length = Integer.parseInt(contentLength.get());
-                final var bodyBytes = in.readNBytes(length);
-
-                body = new String(bodyBytes);
-                System.out.println(body);
-            }
-        }
-        return new Request(path, method);
+    public String getMethod() {
+        return method;
     }
 
-
-    private static Optional<String> extractHeader(List<String> headers, String header) {
-        return headers.stream()
-                .filter(o -> o.startsWith(header))
-                .map(o -> o.substring(o.indexOf(" ")))
-                .map(String::trim)
-                .findFirst();
+    public String getPath() {
+        return path;
     }
 
-    private static void badRequest(BufferedOutputStream out) throws IOException {
-        out.write((
-                "HTTP/1.1 400 Bad Request\r\n" +
-                        "Content-Length: 0\r\n" +
-                        "Connection: close\r\n" +
-                        "\r\n"
-        ).getBytes());
-        out.flush();
+    public Path getFilePath() {
+        return filePath;
     }
 
-    // from google guava with modifications
-    private static int indexOf(byte[] array, byte[] target, int start, int max) {
-        outer:
-        for (int i = start; i < max - target.length + 1; i++) {
-            for (int j = 0; j < target.length; j++) {
-                if (array[i + j] != target[j]) {
-                    continue outer;
-                }
-            }
-            return i;
-        }
-        return -1;
+    public String getMimeType() {
+        return mimeType;
+    }
+
+    public long getLenght() {
+        return lenght;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
+    public String getBody() {
+        return body;
     }
 }

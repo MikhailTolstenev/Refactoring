@@ -1,46 +1,52 @@
 package ru.netology;
 
 import java.io.*;
-import java.net.ServerSocket;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Main {
     public static void main(String[] args) {
-        final List validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
-        var server = new Server();
-        server.connection(9999, validPaths);
-        server.addHandler("GET", "/messages", new Handler() {
-            public void handle(Request request, BufferedOutputStream responseStream) {
-                // TODO: handlers code
+        Server server = new Server(8888);
+
+//        server.addHandler("GET", "/spring.svg", new Handler() {
+//            public void handle(Request request, BufferedOutputStream out) {
+//                try {
+//                    out.write((
+//                            "HTTP/1.1 200 OK\r\n" +
+//                                    "Content-Type: " + request.getMimeType() + "\r\n" +
+//                                    "Content-Length: " + request.getLenght() + "\r\n" +
+//                                    "Connection: close\r\n" +
+//                                    "\r\n"
+//                    ).getBytes());
+//                    Files.copy(request.getFilePath(), out);
+//                    out.flush();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//
+//        });
+
+        server.addHandler("POST", "/spring.svg", new Handler() {
+            public void handle(Request request, BufferedOutputStream out) {
+                try {
+                    out.write((
+                            "HTTP/1.1 200 OK\r\n" +
+                                    "Content-Type: " + request.getMimeType() + "\r\n" +
+                                    "Content-Length: " + request.getLenght() + "\r\n" +
+                                    "Connection: close\r\n" +
+                                    "\r\n"
+                    ).getBytes());
+                    Files.copy(request.getFilePath(), out);
+                    out.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
+
         });
-        server.addHandler("POST", "/messages", new Handler() {
-            public void handle(Request request, BufferedOutputStream responseStream) {
-                // TODO: handlers code
-            }
-        });
+        server.start();
 
-
-
-    }}
-
-
-
+    }
+}
